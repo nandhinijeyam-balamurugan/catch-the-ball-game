@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Catch the Ball Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at top left, #0f2027, #203a43, #2c5364);
+      font-family: Arial, sans-serif;
+      color: white;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.2;
+      z-index: 0;
+    }
+
+    .game-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    #circle {
+      width: 50px;
+      height: 50px;
+      background-color: dodgerblue;
+      border-radius: 50%;
+      position: absolute;
+      top: 100px;
+      left: 100px;
+      z-index: 1;
+    }
+
+    #paddle {
+      width: 150px;
+      height: 20px;
+      background-color: crimson;
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+    }
+
+    #start, #end {
+      position: absolute;
+      top: 20px;
+      padding: 10px 5px;
+      font-size: 18px;
+      border: none;
+      cursor: pointer;
+      z-index: 2;
+      border-radius: 5px;
+    }
+
+    #start {
+      left: 20px;
+      background-color: limegreen;
+    }
+
+    #end {
+      left: 120px;
+      background-color: orangered;
+    }
+
+    #score {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 20px;
+      z-index: 2;
+    }
+
+    #gameOver {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 30px;
+      color: yellow;
+      text-align: center;
+      z-index: 3;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="start" onclick="startGame()">Start Game</button>
+  <button id="end" onclick="endGame()">End Game</button>
+  <div id="score">Score: 0</div>
+  <div id="gameOver"></div>
+
+  <div class="game-container">
+    <div id="circle"></div>
+    <div id="paddle"></div>
+  </div>
+
+  <script>
+    const circle = document.getElementById("circle");
+    const paddle = document.getElementById("paddle");
+    const scoreDisplay = document.getElementById("score");
+    const gameOverDisplay = document.getElementById("gameOver");
+
+    let ballX = 100, ballY = 100;
+    let ballSpeedX = 4, ballSpeedY = 4;
+    let score = 0;
+    let gameRunning = false;
+    let animationId;
+
+    function createBackgroundShapes() {
+      for (let i = 0; i < 20; i++) {
+        const shape = document.createElement("div");
+        shape.className = "shape";
+        shape.style.width = shape.style.height = `${Math.random() * 100 + 20}px`;
+        shape.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 70%)`;
+        shape.style.top = `${Math.random() * window.innerHeight}px`;
+        shape.style.left = `${Math.random() * window.innerWidth}px`;
+        document.body.appendChild(shape);
+      }
+    }
+
+    function startGame() {
+      if (!gameRunning) {
+        gameRunning = true;
+        score = 0;
+        scoreDisplay.textContent = "Score: 0";
+        gameOverDisplay.style.display = "none";
+        ballX = 100;
+        ballY = 100;
+        moveBall();
+      }
+    }
+
+    function endGame() {
+      if (gameRunning) {
+        gameRunning = false;
+        cancelAnimationFrame(animationId);
+        gameOverDisplay.innerHTML = `<p>Game Ended!</p><p>Your Score: ${score}</p>`;
+        gameOverDisplay.style.display = "block";
+      }
+    }
+
+    function moveBall() {
+      const containerWidth = window.innerWidth;
+      const containerHeight = window.innerHeight;
+
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+
+      if (ballX <= 0 || ballX + 50 >= containerWidth) ballSpeedX *= -1;
+      if (ballY <= 0) ballSpeedY *= -1;
+
+      const ballRect = circle.getBoundingClientRect();
+      const paddleRect = paddle.getBoundingClientRect();
+
+      if (
+        ballRect.bottom >= paddleRect.top &&
+        ballRect.right >= paddleRect.left &&
+        ballRect.left <= paddleRect.right &&
+        ballRect.top <= paddleRect.bottom
+      ) {
+        ballSpeedY *= -1;
+        ballY = paddleRect.top - 51;
+        score++;
+        scoreDisplay.textContent = `Score: ${score}`;
+      }
+
+      if (ballY + 50 >= containerHeight) {
+        gameRunning = false;
+        cancelAnimationFrame(animationId);
+        gameOverDisplay.innerHTML = `<p>You Lost!</p><p>Your Score: ${score}</p>`;
+        gameOverDisplay.style.display = "block";
+        return;
+      }
+
+      circle.style.left = `${ballX}px`;
+      circle.style.top = `${ballY}px`;
+
+      if (gameRunning) {
+        animationId = requestAnimationFrame(moveBall);
+      }
+    }
+
+    // Mouse movement for paddle
+    document.addEventListener("mousemove", (e) => {
+      if (!gameRunning) return;
+      const paddleWidth = paddle.offsetWidth;
+      let newX = e.clientX - paddleWidth / 2;
+      const maxLeft = window.innerWidth - paddleWidth;
+      newX = Math.max(0, Math.min(newX, maxLeft));
+      paddle.style.left = `${newX}px`;
+    });
+
+    // Create decorative background shapes
+    createBackgroundShapes();
+  </script>
+</body>
+</html>
